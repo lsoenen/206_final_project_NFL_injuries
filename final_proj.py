@@ -53,10 +53,26 @@ def init_db():
     cur.execute(statement)
     conn.commit()
 
+    statement = '''
+        DROP TABLE IF EXISTS 'Roster';
+    '''
+
+    cur.execute(statement)
+    conn.commit()
+
     statement = '''  CREATE TABLE 'Injuries' (
                 'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
                 'Name'  TEXT,
                 'Injury' TEXT
+                ); '''
+
+    cur.execute(statement)
+
+
+    statement = '''  CREATE TABLE 'Roster' (
+                'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
+                'Name'  TEXT,
+                'Position' TEXT
                 ); '''
 
     cur.execute(statement)
@@ -110,8 +126,22 @@ for num in all_weeks:
     teams= data['teams']
 
     for team in teams:
+        team_offense = team['offense']
+        team_defense = team['defense']
+        team_special_teams = team['special_teams']
+        for position in team_offense:
+            player = position['position']['players']
+            for person in player:
+                person_lst = []
+                person_lst.append(person['name'])
+                person_lst.append(person['position'])
+                if person_lst not in insert_lst_2:
+                    insert_lst_2.append(person_lst)
+                else:
+                    continue
 
-    print(data)
+# print(insert_lst_2)
+
 
     # teams= data['teams']
     # week = data['week']['sequence']
@@ -157,6 +187,12 @@ def insert_stuff():
     for player in insert_lst_1:
         insertion = (None, player[0], player[1])
         statement = 'INSERT INTO "Injuries" '
+        statement += 'VALUES (?, ?, ?)'
+        cur.execute(statement, insertion)
+
+    for player in insert_lst_2:
+        insertion = (None, player[0], player[1])
+        statement = 'INSERT INTO "Roster" '
         statement += 'VALUES (?, ?, ?)'
         cur.execute(statement, insertion)
 
