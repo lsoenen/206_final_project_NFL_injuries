@@ -3,7 +3,11 @@ import requests
 import json
 import sqlite3
 import sys
+import plotly.plotly as py
+import plotly.graph_objs as go
 
+# CACHING
+# ------------------------------------------------------------------------------
 CACHE_FNAME = 'cache.json'
 
 try:
@@ -41,6 +45,8 @@ def make_request_using_cache(url):
 # def get_url(url):
 #     return url
 
+# DATABASE CREATION
+# ------------------------------------------------------------------------------
 DBNAME = 'NFL.db'
 
 def init_db():
@@ -72,15 +78,18 @@ def init_db():
     statement = '''  CREATE TABLE 'Roster' (
                 'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
                 'Name'  TEXT,
+                'NameId' INTEGER,
                 'Position' TEXT
                 ); '''
 
     cur.execute(statement)
+    conn.commit()
     conn.close()
 
 init_db()
 
-
+# REQUESTS
+# ------------------------------------------------------------------------------
 year = 2015
 all_weeks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
@@ -140,46 +149,34 @@ for num in all_weeks:
                 else:
                     continue
 
+        for position in team_defense:
+            player = position['position']['players']
+            for person in player:
+                person_lst = []
+                person_lst.append(person['name'])
+                person_lst.append(person['position'])
+                if person_lst not in insert_lst_2:
+                    insert_lst_2.append(person_lst)
+                else:
+                    continue
+
+        for position in team_special_teams:
+            player = position['position']['players']
+            for person in player:
+                person_lst = []
+                person_lst.append(person['name'])
+                person_lst.append(person['position'])
+                if person_lst not in insert_lst_2:
+                    insert_lst_2.append(person_lst)
+                else:
+                    continue
+
 # print(insert_lst_2)
 
 
-    # teams= data['teams']
-    # week = data['week']['sequence']
-    #
-    # for team in teams:
-    #
-    #     team_name = team['name']
-    #     # team_lst.append(team_name)
-    #     players = team['players']
-    #     for player in players:
-    #         player_info = []
-    #         name = player['name']
-    #         injuries = player['injuries'][0]
-    #         player_info.append(name)
-    #         try:
-    #             body_part = injuries['primary']
-    #             player_info.append(body_part)
-    #         except:
-    #             body_part = 'None'
-    #             player_info.append(body_part)
-    #         insert_lst_1.append(player_info)
 
-# print(name_lst)
-# print(team_lst)
-# print(week)
-# print(injuries_lst)
-
-# CREATING INJURY DICIONARY
-# ------------------------------------
-#     if body_part not in injury_dict:
-#         injury_dict[body_part] = 1
-#     else:
-#         injury_dict[body_part] +=1
-# except:
-#     continue
-
-
-
+# DATABASE INSERTION
+# ------------------------------------------------------------------------------
 def insert_stuff():
     conn = sqlite3.connect(DBNAME)
     cur = conn.cursor()
@@ -190,13 +187,106 @@ def insert_stuff():
         statement += 'VALUES (?, ?, ?)'
         cur.execute(statement, insertion)
 
-    for player in insert_lst_2:
-        insertion = (None, player[0], player[1])
-        statement = 'INSERT INTO "Roster" '
-        statement += 'VALUES (?, ?, ?)'
-        cur.execute(statement, insertion)
+    players_dict = {}
+    statement = 'SELECT Id, Name FROM Injuries'
+    cur.execute(statement)
+    for player in cur:
+        players_dict[player[1]] = player[0]
 
+    for player in insert_lst_2:
+        if player[0] in players_dict:
+            insertion = (None, player[0], players_dict[player[0]], player[1])
+            statement = 'INSERT INTO "Roster" '
+            statement += 'VALUES (?, ?, ?, ?)'
+            cur.execute(statement, insertion)
+        else:
+            insertion = (None, player[0], None, player[1])
+            statement = 'INSERT INTO "Roster" '
+            statement += 'VALUES (?, ?, ?, ?)'
+            cur.execute(statement, insertion)
     conn.commit()
     conn.close()
 
 insert_stuff()
+
+
+# STATEMENTS
+# ------------------------------------------------------------------------------
+def total_injuries_by_year():
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+
+    statement = 'SELECT Injury, Count(Injury) FROM Injuries Group By Injury Order By Count(injury) DESC'
+    cur.execute(statement)
+
+    injury_type = []
+    injury_total = []
+
+    for row in cur:
+        injury_type.append(row[0])
+        injury_total.append(row[1])
+
+    data = [go.Bar(
+                x= injury_type,
+                y= injury_total
+        )]
+
+    py.iplot(data, filename='injuries_in_year')
+
+# total_injuries_by_year()
+
+
+def concussions_by_year():
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+
+    statement = " SELECT Count(Injury) FROM Injuries WHERE Injury = 'Concussion' "
+    cur.execute(statement)
+
+    for row in cur:
+        num_concussions = row[0]
+
+    statement = " SELECT Count(Injury) FROM Injuries "
+    cur.execute(statement)
+
+    for row in cur:
+        num_total_injuries = row[0]
+
+    num_other_injuries = (num_total_injuries - num_concussions)
+    labels = ['Concussions','Other Injuries']
+    values = [num_concussions, num_other_injuries]
+    trace = go.Pie(labels=labels, values=values)
+
+    py.iplot([trace], filename='concussion_percentage_in_year')
+
+
+# concussions_by_year()
+
+
+def injuries_by_position():
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+
+    statement = ''' SELECT Position, Count(Injury) FROM Injuries JOIN Roster ON Injuries.Id = Roster.NameId
+                    GROUP BY Position ORDER BY Count(Injury) DESC '''
+
+    cur.execute(statement)
+
+    position_lst = []
+    num_of_injuries_lst = []
+
+    for row in cur:
+        position_lst.append(row[0])
+        num_of_injuries_lst.append(row[1])
+
+    data = [go.Bar(
+                x= position_lst,
+                y= num_of_injuries_lst
+        )]
+
+    py.iplot(data, filename='num_injuries_by_position')
+
+
+
+
+injuries_by_position()
