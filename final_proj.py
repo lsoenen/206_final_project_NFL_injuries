@@ -45,46 +45,6 @@ def make_request_using_cache(url):
 #     return url
 
 
-DBNAME = 'NFL.db'
-
-def init_db():
-    conn = sqlite3.connect(DBNAME)
-    cur = conn.cursor()
-
-    statement = '''
-        DROP TABLE IF EXISTS 'Injuries';
-    '''
-    cur.execute(statement)
-    conn.commit()
-
-    statement = '''
-        DROP TABLE IF EXISTS 'Roster';
-    '''
-
-    cur.execute(statement)
-    conn.commit()
-
-    statement = '''  CREATE TABLE 'Injuries' (
-                'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
-                'Name'  TEXT,
-                'Injury' TEXT,
-                'Year' INTEGER
-                ); '''
-
-    cur.execute(statement)
-
-    statement = '''  CREATE TABLE 'Roster' (
-                'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
-                'Name'  TEXT,
-                'NameId' INTEGER,
-                'Position' TEXT
-                ); '''
-
-    cur.execute(statement)
-    conn.commit()
-    conn.close()
-
-init_db()
 
 
 possible_years = ['2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017']
@@ -94,6 +54,48 @@ year = input("Please select an NFL season between the years 2010 and 2017 or 'ex
 while year != 'exit':
     year = input("Please select an NFL season between the years 2010 and 2017 or 'exit' to quit: ")
     if year in possible_years:
+
+        DBNAME = 'NFL.db'
+
+        def init_db():
+            conn = sqlite3.connect(DBNAME)
+            cur = conn.cursor()
+
+            statement = '''
+                DROP TABLE IF EXISTS 'Injuries';
+            '''
+            cur.execute(statement)
+            conn.commit()
+
+            statement = '''
+                DROP TABLE IF EXISTS 'Roster';
+            '''
+
+            cur.execute(statement)
+            conn.commit()
+
+            statement = '''  CREATE TABLE 'Injuries' (
+                        'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
+                        'Name'  TEXT,
+                        'Injury' TEXT,
+                        'Year' INTEGER
+                        ); '''
+
+            cur.execute(statement)
+
+            statement = '''  CREATE TABLE 'Roster' (
+                        'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
+                        'Name'  TEXT,
+                        'NameId' INTEGER,
+                        'Position' TEXT
+                        ); '''
+
+            cur.execute(statement)
+            conn.commit()
+            conn.close()
+
+        init_db()
+
 
         all_weeks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
@@ -360,4 +362,4 @@ while year != 'exit':
                 print('Please enter a valid number')
             more_info = input('Please input a number above display the information would you like to see for season ' + year + ': ')
 
-print('bye')
+print('Bye!')
