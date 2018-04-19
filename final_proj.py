@@ -69,7 +69,8 @@ def init_db():
     statement = '''  CREATE TABLE 'Injuries' (
                 'Id' INTEGER PRIMARY KEY AUTOINCREMENT,
                 'Name'  TEXT,
-                'Injury' TEXT
+                'Injury' TEXT,
+                'Year' INTEGER
                 ); '''
 
     cur.execute(statement)
@@ -90,7 +91,11 @@ init_db()
 
 # REQUESTS
 # ------------------------------------------------------------------------------
-year = 2015
+possible_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+
+year = input('Please select an NFL season between the years 2010 and 2017: ')
+
+
 all_weeks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 insert_lst_1 = []
@@ -116,9 +121,36 @@ for num in all_weeks:
             try:
                 body_part = injuries['primary']
                 player_info.append(body_part)
+                player_info.append(year)
             except:
                 body_part = 'None'
                 player_info.append(body_part)
+                player_info.append(year)
+            insert_lst_1.append(player_info)
+
+    nfl_official_url_2009 = (base_url + "/nfl-ot2/seasontd/" + str(2009) + '/REG/' + str(num) + "/injuries.json?api_key=" + sports_radar_key)
+    data = json.loads(make_request_using_cache(nfl_official_url_2009))
+
+    teams= data['teams']
+    week = data['week']['sequence']
+
+    for team in teams:
+
+        team_name = team['name']
+        players = team['players']
+        for player in players:
+            player_info = []
+            name = player['name']
+            injuries = player['injuries'][0]
+            player_info.append(name)
+            try:
+                body_part = injuries['primary']
+                player_info.append(body_part)
+                player_info.append(2009)
+            except:
+                body_part = 'None'
+                player_info.append(body_part)
+                player_info.append(2009)
             insert_lst_1.append(player_info)
 
 # print(insert_lst_1)
@@ -171,7 +203,7 @@ for num in all_weeks:
                 else:
                     continue
 
-# print(insert_lst_2)
+    # print(insert_lst_2)
 
 
 
@@ -182,9 +214,9 @@ def insert_stuff():
     cur = conn.cursor()
 
     for player in insert_lst_1:
-        insertion = (None, player[0], player[1])
+        insertion = (None, player[0], player[1], player[2])
         statement = 'INSERT INTO "Injuries" '
-        statement += 'VALUES (?, ?, ?)'
+        statement += 'VALUES (?, ?, ?, ?)'
         cur.execute(statement, insertion)
 
     players_dict = {}
@@ -216,7 +248,7 @@ def total_injuries_by_year():
     conn = sqlite3.connect(DBNAME)
     cur = conn.cursor()
 
-    statement = 'SELECT Injury, Count(Injury) FROM Injuries Group By Injury Order By Count(injury) DESC'
+    statement = 'SELECT Injury, Count(Injury), Year FROM Injuries WHERE Year <> 2009 Group By Injury Order By Count(injury) DESC'
     cur.execute(statement)
 
     injury_type = []
@@ -231,7 +263,7 @@ def total_injuries_by_year():
                 y= injury_total
         )]
 
-    py.iplot(data, filename='injuries_in_year')
+    py.plot(data, filename='injuries_in_year')
 
 # total_injuries_by_year()
 
@@ -240,13 +272,13 @@ def concussions_by_year():
     conn = sqlite3.connect(DBNAME)
     cur = conn.cursor()
 
-    statement = " SELECT Count(Injury) FROM Injuries WHERE Injury = 'Concussion' "
+    statement = " SELECT Count(Injury) FROM Injuries WHERE Injury = 'Concussion' and Year <> 2009 "
     cur.execute(statement)
 
     for row in cur:
         num_concussions = row[0]
 
-    statement = " SELECT Count(Injury) FROM Injuries "
+    statement = " SELECT Count(Injury) FROM Injuries WHERE Year <> 2009 "
     cur.execute(statement)
 
     for row in cur:
@@ -257,8 +289,7 @@ def concussions_by_year():
     values = [num_concussions, num_other_injuries]
     trace = go.Pie(labels=labels, values=values)
 
-    py.iplot([trace], filename='concussion_percentage_in_year')
-
+    py.plot([trace], filename='concussion_percentage_in_year')
 
 # concussions_by_year()
 
@@ -267,8 +298,8 @@ def injuries_by_position():
     conn = sqlite3.connect(DBNAME)
     cur = conn.cursor()
 
-    statement = ''' SELECT Position, Count(Injury) FROM Injuries JOIN Roster ON Injuries.Id = Roster.NameId
-                    GROUP BY Position ORDER BY Count(Injury) DESC '''
+    statement = ''' SELECT Position, Count(Injury), Year FROM Injuries JOIN Roster ON Injuries.Id = Roster.NameId
+                WHERE Year <> 2009  GROUP BY Position ORDER BY Count(Injury) DESC  '''
 
     cur.execute(statement)
 
@@ -284,9 +315,34 @@ def injuries_by_position():
                 y= num_of_injuries_lst
         )]
 
-    py.iplot(data, filename='num_injuries_by_position')
+    py.plot(data, filename='num_injuries_by_position')
+
+# injuries_by_position()
+
+def concussion_compared_to_2009():
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+
+    statement = ''' SELECT Count(Injury) FROM Injuries WHERE Injury = 'Concussion' and Year = 2009 '''
+    cur.execute(statement)
+
+    concussion_lst = []
+
+    for row in cur:
+        concussion_lst.append(row[0])
+
+    statement = ''' SELECT Count(Injury) FROM Injuries WHERE Injury = 'Concussion' and Year <> 2009 '''
+    cur.execute(statement)
+
+    for row in cur:
+        concussion_lst.append(row[0])
+
+    data = [go.Bar(
+                x= ['2009', str(year)],
+                y= concussion_lst
+        )]
+
+    py.plot(data, filename='concussion_comparison')
 
 
-
-
-injuries_by_position()
+concussion_compared_to_2009()
