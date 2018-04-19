@@ -49,7 +49,8 @@ def make_request_using_cache(url):
 
 possible_years = ['2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017']
 
-year = input("Please select an NFL season between the years 2010 and 2017 or 'exit' to quit: ")
+# year = input("Please select an NFL season between the years 2010 and 2017 or 'exit' to quit: ")
+year = 'starter'
 
 while year != 'exit':
     year = input("Please select an NFL season between the years 2010 and 2017 or 'exit' to quit: ")
