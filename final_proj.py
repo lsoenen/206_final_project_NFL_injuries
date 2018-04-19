@@ -345,7 +345,7 @@ while year != 'exit':
         print('4. The total number of concussions in ' + year + ' compared to 2009')
         print( ' ')
 
-        more_info = input('Please input a number above display the information would you like to see for season ' + year + ': ')
+        more_info = input("Please input a number above display the information would you like to see for season " + year + ", or enter 'exit' to pick a new season: ")
         while more_info != 'exit':
 
             if more_info == '1':
