@@ -40,23 +40,6 @@ def make_request_using_cache(url):
         fw.close()
         return CACHE_DICTION[unique_indent]
 
-# Don't know if I need this
-# def get_url(url):
-#     return url
-
-
-# class players:
-#
-#     def __init__(self, name = "No name", injury = "No Injury", year = "No year"):
-#
-#         for player in insert_lst_1:
-#             self.name = player[0]
-#             self.injury = player[1]
-#             self.year = player[2]
-#
-#     def __str__(self):
-#         return "{} by {} ({})".format(self.name, self.injury, self.year)
-
 
 possible_years = ['2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017']
 
@@ -353,7 +336,6 @@ def interactive_prompt():
 
                 py.plot(data, filename='concussion_comparison')
 
-
             # concussion_compared_to_2009()
 
             print ( ' ')
@@ -379,6 +361,8 @@ def interactive_prompt():
                 more_info = input('Please input a number above display the information would you like to see for season ' + year + ': ')
 
     print('Bye!')
+
+
 
 if __name__=='__main__':
     interactive_prompt()
